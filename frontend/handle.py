@@ -31,12 +31,15 @@ PORT=8089
 ##
 ##s.connect(('10.23.7.182', 8089))
 
+answers = set(line.strip() for line in open('answers.txt'))
+dictionary = set(line.strip() for line in open('dictionary.txt'))
+
 def chooseword():
     fiveset = []
-    for i in english_words_lower_set:
+    for i in answers:
         if(len(i) == 5):
             fiveset.append(i)
-    choice = random.choice(fiveset)
+    choice = "valve"     
     print(choice)
     return choice
 
@@ -52,6 +55,8 @@ class game_interface:
         
         self.image_list = []
         self.ref_list = []
+
+        self.master = root
         
         for filename in glob.glob('Letters/*.png'):
             self.image_list.append(filename)
@@ -115,10 +120,10 @@ class game_interface:
         self.tryFrame.pack()
         self.entry = tk.Entry(root)
         self.entry.pack()
-        
+
         def tryGuess():
             self.guess = self.entry.get().upper()
-            if(self.guess.lower() in english_words_lower_set):
+            if(self.guess.lower() in dictionary or self.guess.lower() in answers):
                 
                 for i in range(5):
                     self.letterList[self.currentTry * 5 + i].set(self.guess[i])
@@ -213,6 +218,22 @@ class game_interface:
         
         self.recordFrame.pack()
 
+        self.bindings()
+
+    def edit_text(self, data):
+        print("data = ", data)
+        #self.entry.insert(0,data)
+        if (data != " " and data != ""):
+            self.label.configure(text = str(data))
+
+    def set_text(self, text):
+        self.entry.delete(0,tk.END)
+        self.entry.insert(0,text)
+
+    def bindings(self):
+        self.master.bind('1', lambda event: self.set_text(self.entry.get() + self.label.cget("text")))
+
+
 ##label = tk.Label(vid)
 ##label.grid(row=0, column=0)
 ##cap= cv2.VideoCapture(0)
@@ -228,8 +249,11 @@ data = b''
 payload_size = struct.calcsize("L")
 def get_text():
     data = conn.recv(4096)
-    print(data.decode(), "\n")
+    print(type(data.decode()), "\n")
     root.after(50, get_text)
+
+    gui.edit_text(data.decode())
+    gui.bindings()
 
 root.title("Test application")
 
@@ -246,6 +270,7 @@ s.listen(10)
 print('Socket now listening')
 
 conn,addr=s.accept()
+
 get_text()
 #show_frames()
 root.mainloop()
